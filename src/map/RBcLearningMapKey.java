@@ -4,8 +4,10 @@
 package map;
 
 /**
- * @author wenbyuan
  * Identifier for RTM Bullseye learning map, value should not be NULL
+ * @author wenbyuan
+ * @constructor
+ * public RBcLearningMapKey(String placementId)
  */
 public class RBcLearningMapKey {
 	private String placementId;
@@ -27,5 +29,10 @@ public class RBcLearningMapKey {
 		if( o == null || !(o instanceof RBcLearningMapKey) ) return false;
 		if( getKey() == null || ((RBcLearningMapKey)o).getKey() == null ) return false;
 		return getKey().compareTo( ((RBcLearningMapKey)o).getKey() ) == 0;
+	}
+	
+	@Override
+	public String toString() {
+		return this.placementId;
 	}
 }
