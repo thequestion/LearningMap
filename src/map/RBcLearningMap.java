@@ -8,11 +8,14 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author wenbyuan
  * RTM Bullseye client learning map
+ * 
+ * @author wenbyuan
+ * 
+ * 
  */
 public class RBcLearningMap {
-	private static RBcLearningMap instance = null;
+	private static final RBcLearningMap instance = new RBcLearningMap();
 	private static Map<RBcLearningMapKey, Set<BullseyeAttribute>> learningMap = null;
 	
 	private RBcLearningMap() {
@@ -24,7 +27,6 @@ public class RBcLearningMap {
 	 * @return
 	 */
 	public static RBcLearningMap getInstance() {
-		if(instance == null) instance = new RBcLearningMap();
 		return instance;
 	}
 }

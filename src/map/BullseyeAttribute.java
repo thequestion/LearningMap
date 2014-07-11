@@ -4,14 +4,27 @@
 package map;
 
 /**
+ * 
+ * Bullseye Attribute:
+ * Two attributes are regarded as equals as long as their ids are identical.
+ * 
+ * @constructor 
+ * public BullseyeAttribute(int id, String name, int bucketId)
+ * 
  * @author wenbyuan
- *
+ * 
  */
 public class BullseyeAttribute {
 
 	private int id;
 	private String name;
 	private int bucketId;
+	
+	public BullseyeAttribute(int id, String name, int bucketId) {
+		this.id = id;
+		this.name = name;
+		this.bucketId = bucketId;
+	}
 	
 	public int getId() {
 		return id;
