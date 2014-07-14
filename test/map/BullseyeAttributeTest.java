@@ -4,6 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.HashMap;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -26,6 +28,9 @@ public class BullseyeAttributeTest {
 		
 		assertEquals(attr1, attr2);
 		assertNotEquals(attr1, attr3);
+		HashMap<BullseyeAttribute, Boolean> testMap = new HashMap<BullseyeAttribute, Boolean>();
+		testMap.put(attr2, true);
+		assertTrue(testMap.containsKey(attr1));
 	}
 
 }

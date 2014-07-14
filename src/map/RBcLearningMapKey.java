@@ -24,13 +24,34 @@ public class RBcLearningMapKey {
 		return this.placementId;
 	}
 	
-	@Override
-	public boolean equals(Object o){
-		if( o == null || !(o instanceof RBcLearningMapKey) ) return false;
-		if( getKey() == null || ((RBcLearningMapKey)o).getKey() == null ) return false;
-		return getKey().compareTo( ((RBcLearningMapKey)o).getKey() ) == 0;
-	}
+
 	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((placementId == null) ? 0 : placementId.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		RBcLearningMapKey other = (RBcLearningMapKey) obj;
+		if (placementId == null) {
+			if (other.placementId != null)
+				return false;
+		} else if (!placementId.equals(other.placementId))
+			return false;
+		return true;
+	}
+
 	@Override
 	public String toString() {
 		return this.placementId;

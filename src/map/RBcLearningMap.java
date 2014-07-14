@@ -3,8 +3,8 @@
  */
 package map;
 
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,10 +16,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RBcLearningMap {
 	private static final RBcLearningMap instance = new RBcLearningMap();
-	private static Map<RBcLearningMapKey, Set<BullseyeAttribute>> learningMap = new ConcurrentHashMap<RBcLearningMapKey, Set<BullseyeAttribute>>();;
+	private static ConcurrentHashMap<RBcLearningMapKey, Set<BullseyeAttribute>> learningMap = new ConcurrentHashMap<RBcLearningMapKey, Set<BullseyeAttribute>>();
 	
 	private RBcLearningMap() {
 //		learningMap = new ConcurrentHashMap<RBcLearningMapKey, Set<BullseyeAttribute>>();
+		System.out.println("Constructor called.");
 	}
 	
 	/**
@@ -52,7 +53,11 @@ public class RBcLearningMap {
 		Set<BullseyeAttribute> attributes = new HashSet<BullseyeAttribute>();
 		for(RBcLearningMapKey key : keys) {
 			if(key != null && learningMap.containsKey(key)) {
-				attributes.addAll(learningMap.get(key));
+				Set<BullseyeAttribute> tempAttributes = learningMap.get(key);
+				//Synchronized needed because tempAttributes is accessed by multiple thread
+				synchronized(tempAttributes){
+					attributes.addAll(tempAttributes);
+				}
 			}
 		}
 		return attributes;
@@ -66,13 +71,8 @@ public class RBcLearningMap {
 		if(keys == null || attribute == null) return; 
 		for( RBcLearningMapKey key : keys ) {
 			if( key != null ){
-				if( learningMap.containsKey(key) ){
-					learningMap.get(key).add(attribute);
-				} else {
-					Set<BullseyeAttribute> newAttributeSet = new HashSet<BullseyeAttribute>();
-					newAttributeSet.add(attribute);
-					learningMap.put(key, newAttributeSet);
-				}
+				learningMap.putIfAbsent(key, Collections.synchronizedSet( new HashSet<BullseyeAttribute>()  ));
+				learningMap.get(key).add(attribute);
 			}
 		}
 	}
@@ -85,18 +85,31 @@ public class RBcLearningMap {
 		if(keys == null || attributes == null) return; 
 		for( RBcLearningMapKey key : keys ) {
 			if( key != null ){
-				if( learningMap.containsKey(key) ){
-					learningMap.get(key).addAll(attributes);
-				} else {
-					Set<BullseyeAttribute> newAttributeSet = new HashSet<BullseyeAttribute>();
-					newAttributeSet.addAll(attributes);
-					learningMap.put(key, newAttributeSet);
-				}
+				learningMap.putIfAbsent(key, Collections.synchronizedSet( new HashSet<BullseyeAttribute>() ));
+				learningMap.get(key).addAll(attributes);
 			}
 		}
 	}
 	
 	public synchronized void update() {
 		
+	}
+	
+	/**
+	 * Clear all the records in the map
+	 * 
+	 */
+	public synchronized void clear() {
+		learningMap.clear();
+	}
+	
+	//For debug
+	public void printMap() {
+		for(RBcLearningMapKey key : learningMap.keySet()) {
+			StringBuffer buffer = new StringBuffer();
+			buffer.append("Placement: " + key);
+			buffer.append(" Attributes: " + learningMap.get(key));
+			System.out.println(buffer.toString());
+		}
 	}
 }

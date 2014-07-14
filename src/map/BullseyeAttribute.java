@@ -46,13 +46,36 @@ public class BullseyeAttribute {
 		return bucketId;
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + id;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		BullseyeAttribute other = (BullseyeAttribute) obj;
+		if (id != other.id)
+			return false;
+		return true;
+	}
+
 	public void setBucketId(int bucketId) {
 		this.bucketId = bucketId;
 	}
 
+
+	
 	@Override
-	public boolean equals(Object o){
-		if( o == null || !(o instanceof BullseyeAttribute)) return false;
-		return getId() == ((BullseyeAttribute)o).getId();
+	public String toString() {
+		return "" + this.id;
 	}
 }

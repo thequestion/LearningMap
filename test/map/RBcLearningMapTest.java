@@ -15,6 +15,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.Before;
@@ -27,8 +28,8 @@ import org.junit.Test;
 public class RBcLearningMapTest{
 
 	ExecutorService service = Executors.newCachedThreadPool();
-	private static int count = 0;
-	private static int thread = 0;
+	private volatile static int count = 0;
+	private volatile static int thread = 0;
 	/**
 	 * @throws java.lang.Exception
 	 */
@@ -55,6 +56,7 @@ public class RBcLearningMapTest{
 		assertNotEquals(RBcLearningMap.getInstance(), dummy);
 	}
 	
+	@Test
 	public void testSingletonMultThread() throws InterruptedException, ExecutionException {
 		Future<RBcLearningMap> future1 = getFutureRBcLearningMap();
 		//Multi thread
@@ -69,33 +71,112 @@ public class RBcLearningMapTest{
 	
 	@Test
 	public void testAddAttribute() {
-		Set<BullseyeAttribute> attributes = generateAttributes(count++, 1);
-		Set<RBcLearningMapKey> placements = generateKeys(count++, 5);
-		RBcLearningMap.getInstance().addAttribute(placements, (BullseyeAttribute)attributes.toArray()[0]);
-		System.out.println(RBcLearningMap.getInstance().getAttributesForPlacements(placements));
+		synchronized(this){
+			System.out.println();
+			System.out.println("Test add attribute single thread.");
+			Set<BullseyeAttribute> attributes = generateAttributes(count++, 1);
+			Set<RBcLearningMapKey> placements = generateKeys(count++, 5);
+			RBcLearningMap.getInstance().addAttribute(placements, (BullseyeAttribute)attributes.toArray()[0]);
+			System.out.println("Placements: " + placements
+					+ " Attributes: " +RBcLearningMap.getInstance().getAttributesForPlacements(placements));
+			System.out.println("Placement: " + placements.toArray()[0]
+					+ " Attributes: " +RBcLearningMap.getInstance().getAttributesForPlacement((RBcLearningMapKey)placements.toArray()[0]));
+			System.out.println("Current map: ");
+			RBcLearningMap.getInstance().printMap();
+			RBcLearningMap.getInstance().clear();		
+		}
+	}
+	
+	@Test
+	public void testAddAttributes() {
+		synchronized(this){
+			System.out.println();
+			System.out.println("Test add attributes single thread.");
+			Set<BullseyeAttribute> attributes = generateAttributes(count++, 10);
+			Set<RBcLearningMapKey> placements = generateKeys(count++, 5);
+			RBcLearningMap.getInstance().addAttributes(placements, attributes);
+			System.out.println("Placements: " + placements
+					+ " Attributes: " +RBcLearningMap.getInstance().getAttributesForPlacements(placements));
+			System.out.println("Placement: " + placements.toArray()[0]
+					+ " Attributes: " +RBcLearningMap.getInstance().getAttributesForPlacement((RBcLearningMapKey)placements.toArray()[0]));
+			System.out.println("Current map: ");
+			RBcLearningMap.getInstance().printMap();
+			RBcLearningMap.getInstance().clear();		
+		}
 	}
 
-	public void testAddAttributeMultiThread() {
-		for(int i = 0; i < 2; i++){
-			service.execute(new Runnable(){
+	@Test
+	public void testAddAttributeMultiThread() throws InterruptedException {
+		System.out.println();
+		System.out.println("Test add attribute multi thread.");
+		ExecutorService service2 = Executors.newCachedThreadPool();
+		Set<RBcLearningMapKey> testPlacements = generateKeys(17, 5);
+		int THREAD = 100;
+		for(int i = 0; i < THREAD; i++){
+			service2.execute(new Runnable(){
 				@Override
 				public void run() {
 					StringBuffer buffer = new StringBuffer();
-					buffer.append("Thread: " + thread++);
-					Set<BullseyeAttribute> attributes = generateAttributes(count++, 1);
-					Set<RBcLearningMapKey> placements = generateKeys(count++, 5);
+					buffer.append("Thread: " + ++thread);
+					Set<BullseyeAttribute> attributes = generateAttributes(++count, 1);
+					Set<RBcLearningMapKey> placements = generateKeys(17, 5);
 					
 					buffer.append(" Attribute: " + ((BullseyeAttribute)attributes.toArray()[0]).getId());
 					buffer.append(" Placements: " + placements);
 					RBcLearningMap.getInstance().addAttribute(placements, (BullseyeAttribute)attributes.toArray()[0]);
-					System.out.println(buffer.toString());
-				}
-			});			
+					buffer.append(" Attributes in Map: " + RBcLearningMap.getInstance().getAttributesForPlacements(placements));
+					System.out.println(buffer.toString());	
+					}
+			});		
 		}
-		
+		service2.shutdown();
+		while(!service2.isTerminated())
+			service.awaitTermination( 1, TimeUnit.NANOSECONDS );
+//		for(RBcLearningMapKey placement : testPlacements){
+//			assertTrue( RBcLearningMap.getInstance().getAttributesForPlacement(placement).size() == THREAD );
+//		}
+		RBcLearningMap.getInstance().getAttributesForPlacements(testPlacements);
+		System.out.println("Current map: ");
+		RBcLearningMap.getInstance().printMap();
+		RBcLearningMap.getInstance().clear();
 	}
 
-
+	@Test
+	public void testAddAttributesMultiThread() throws InterruptedException {
+		System.out.println();
+		System.out.println("Test add attributes multi thread.");
+		ExecutorService service2 = Executors.newCachedThreadPool();
+		Set<RBcLearningMapKey> testPlacements = generateKeys(17, 5);
+		int THREAD = 100;
+		for(int i = 0; i < THREAD; i++){
+			service2.execute(new Runnable(){
+				@Override
+				public void run() {
+					StringBuffer buffer = new StringBuffer();
+					buffer.append("Thread: " + ++thread);
+					Set<BullseyeAttribute> attributes = generateAttributes(++count, count);
+					Set<RBcLearningMapKey> placements = generateKeys(17, 5);
+					
+					buffer.append(" Attribute: " + attributes);
+					buffer.append(" Placements: " + placements);
+					RBcLearningMap.getInstance().addAttributes(placements, attributes);
+					buffer.append(" Attributes in Map: " + RBcLearningMap.getInstance().getAttributesForPlacements(placements));
+					System.out.println(buffer.toString());	
+					}
+			});		
+		}
+		service2.shutdown();
+		while(!service2.isTerminated())
+			service.awaitTermination( 1, TimeUnit.NANOSECONDS );
+//		for(RBcLearningMapKey placement : testPlacements){
+//			assertTrue( RBcLearningMap.getInstance().getAttributesForPlacement(placement).size() == THREAD );
+//		}
+		RBcLearningMap.getInstance().getAttributesForPlacements(testPlacements);
+		System.out.println("Current map: ");
+		RBcLearningMap.getInstance().printMap();
+		RBcLearningMap.getInstance().clear();
+	}
+	
 	public void testGetAttributesForPlacement() {
 		
 	}
