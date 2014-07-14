@@ -27,20 +27,23 @@ import org.junit.Test;
  */
 public class RBcLearningMapTest{
 
-	ExecutorService service = Executors.newCachedThreadPool();
+	ExecutorService service = null;
 	private volatile static int count = 0;
 	private volatile static int thread = 0;
+	
 	/**
 	 * @throws java.lang.Exception
 	 */
 	@Before
 	public void setUp() throws Exception {
-//		service =  Executors.newCachedThreadPool();
+		service = Executors.newCachedThreadPool();
 	}
 	
 	@After
 	public void tearsDown() throws Exception {
 		service.shutdown();
+		while(!service.isTerminated())
+			service.awaitTermination( 1, TimeUnit.NANOSECONDS );
 	}
 
 	@Test
@@ -70,24 +73,6 @@ public class RBcLearningMapTest{
 	}
 	
 	@Test
-	public void testAddAttribute() {
-		synchronized(this){
-			System.out.println();
-			System.out.println("Test add attribute single thread.");
-			Set<BullseyeAttribute> attributes = generateAttributes(count++, 1);
-			Set<RBcLearningMapKey> placements = generateKeys(count++, 5);
-			RBcLearningMap.getInstance().addAttribute(placements, (BullseyeAttribute)attributes.toArray()[0]);
-			System.out.println("Placements: " + placements
-					+ " Attributes: " +RBcLearningMap.getInstance().getAttributesForPlacements(placements));
-			System.out.println("Placement: " + placements.toArray()[0]
-					+ " Attributes: " +RBcLearningMap.getInstance().getAttributesForPlacement((RBcLearningMapKey)placements.toArray()[0]));
-			System.out.println("Current map: ");
-			RBcLearningMap.getInstance().printMap();
-			RBcLearningMap.getInstance().clear();		
-		}
-	}
-	
-	@Test
 	public void testAddAttributes() {
 		synchronized(this){
 			System.out.println();
@@ -97,48 +82,11 @@ public class RBcLearningMapTest{
 			RBcLearningMap.getInstance().addAttributes(placements, attributes);
 			System.out.println("Placements: " + placements
 					+ " Attributes: " +RBcLearningMap.getInstance().getAttributesForPlacements(placements));
-			System.out.println("Placement: " + placements.toArray()[0]
-					+ " Attributes: " +RBcLearningMap.getInstance().getAttributesForPlacement((RBcLearningMapKey)placements.toArray()[0]));
+			
 			System.out.println("Current map: ");
 			RBcLearningMap.getInstance().printMap();
 			RBcLearningMap.getInstance().clear();		
 		}
-	}
-
-	@Test
-	public void testAddAttributeMultiThread() throws InterruptedException {
-		System.out.println();
-		System.out.println("Test add attribute multi thread.");
-		ExecutorService service2 = Executors.newCachedThreadPool();
-		Set<RBcLearningMapKey> testPlacements = generateKeys(17, 5);
-		int THREAD = 100;
-		for(int i = 0; i < THREAD; i++){
-			service2.execute(new Runnable(){
-				@Override
-				public void run() {
-					StringBuffer buffer = new StringBuffer();
-					buffer.append("Thread: " + ++thread);
-					Set<BullseyeAttribute> attributes = generateAttributes(++count, 1);
-					Set<RBcLearningMapKey> placements = generateKeys(17, 5);
-					
-					buffer.append(" Attribute: " + ((BullseyeAttribute)attributes.toArray()[0]).getId());
-					buffer.append(" Placements: " + placements);
-					RBcLearningMap.getInstance().addAttribute(placements, (BullseyeAttribute)attributes.toArray()[0]);
-					buffer.append(" Attributes in Map: " + RBcLearningMap.getInstance().getAttributesForPlacements(placements));
-					System.out.println(buffer.toString());	
-					}
-			});		
-		}
-		service2.shutdown();
-		while(!service2.isTerminated())
-			service.awaitTermination( 1, TimeUnit.NANOSECONDS );
-//		for(RBcLearningMapKey placement : testPlacements){
-//			assertTrue( RBcLearningMap.getInstance().getAttributesForPlacement(placement).size() == THREAD );
-//		}
-		RBcLearningMap.getInstance().getAttributesForPlacements(testPlacements);
-		System.out.println("Current map: ");
-		RBcLearningMap.getInstance().printMap();
-		RBcLearningMap.getInstance().clear();
 	}
 
 	@Test
@@ -167,20 +115,64 @@ public class RBcLearningMapTest{
 		}
 		service2.shutdown();
 		while(!service2.isTerminated())
-			service.awaitTermination( 1, TimeUnit.NANOSECONDS );
-//		for(RBcLearningMapKey placement : testPlacements){
-//			assertTrue( RBcLearningMap.getInstance().getAttributesForPlacement(placement).size() == THREAD );
-//		}
+			service2.awaitTermination( 1, TimeUnit.NANOSECONDS );
+
 		RBcLearningMap.getInstance().getAttributesForPlacements(testPlacements);
 		System.out.println("Current map: ");
 		RBcLearningMap.getInstance().printMap();
 		RBcLearningMap.getInstance().clear();
 	}
 	
-	public void testGetAttributesForPlacement() {
-		
+	@Test
+	public void testClear() {
+		RBcLearningMap.getInstance().clear();
+		assertEquals("", RBcLearningMap.getInstance().toString());
 	}
 	
+	@Test
+	public void testRemoveAttributesMultiThread() throws InterruptedException {
+		System.out.println();
+		System.out.println("Test remove attributes multi thread.");
+		ExecutorService service2 = Executors.newCachedThreadPool();
+		Set<RBcLearningMapKey> testPlacements = generateKeys(17, 5);
+		int THREAD = 100;
+		for(int i = 0; i < THREAD; i++){
+			service2.execute(new Runnable(){
+				@Override
+				public void run() {
+					StringBuffer buffer = new StringBuffer();
+					buffer.append("Thread: " + ++thread);
+					Set<BullseyeAttribute> attributes = generateAttributes(++count, count);
+					Set<RBcLearningMapKey> placements = generateKeys(17, 5);
+					
+					buffer.append(" Attribute: " + attributes);
+					buffer.append(" Placements: " + placements);
+					buffer.append(System.lineSeparator());
+					buffer.append(" Before removing: ");
+					buffer.append(" Attributes in Map: " + RBcLearningMap.getInstance().getAttributesForPlacements(placements));
+					
+					RBcLearningMap.getInstance().addAttributes(placements, attributes);
+					if(count %2 == 0){
+						RBcLearningMap.getInstance().removeAttributes(placements, attributes);
+						buffer.append(System.lineSeparator());
+						buffer.append(" After removing: ");
+						buffer.append(" Attributes in Map: " + RBcLearningMap.getInstance().getAttributesForPlacements(placements));
+					}
+					buffer.append(System.lineSeparator());
+					System.out.println(buffer.toString());	
+					}
+			});		
+		}
+		service2.shutdown();
+		while(!service2.isTerminated())
+			service2.awaitTermination( 1, TimeUnit.NANOSECONDS );
+
+		RBcLearningMap.getInstance().getAttributesForPlacements(testPlacements);
+		
+		System.out.println("Current map: ");
+		RBcLearningMap.getInstance().printMap();
+		RBcLearningMap.getInstance().clear();
+	}
 
 	private Set<RBcLearningMapKey> generateKeys(long seed, int max) {
 		Random generator = new Random(seed);
@@ -207,7 +199,6 @@ public class RBcLearningMapTest{
 	private Future<RBcLearningMap> getFutureRBcLearningMap() {
 		return service.submit((new Callable<RBcLearningMap>() {
 		      public RBcLearningMap call() {
-//		    	System.out.println("Thread " + count++);
 		        return RBcLearningMap.getInstance();
 		      }
 		    }));

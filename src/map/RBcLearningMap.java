@@ -16,10 +16,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RBcLearningMap {
 	private static final RBcLearningMap instance = new RBcLearningMap();
-	private static ConcurrentHashMap<RBcLearningMapKey, Set<BullseyeAttribute>> learningMap = new ConcurrentHashMap<RBcLearningMapKey, Set<BullseyeAttribute>>();
+	private static ConcurrentHashMap<RBcLearningMapKey, Set<BullseyeAttribute>> learningMap =
+			new ConcurrentHashMap<RBcLearningMapKey, Set<BullseyeAttribute>>();
 	
 	private RBcLearningMap() {
-//		learningMap = new ConcurrentHashMap<RBcLearningMapKey, Set<BullseyeAttribute>>();
 		System.out.println("Constructor called.");
 	}
 	
@@ -29,18 +29,6 @@ public class RBcLearningMap {
 	 */
 	public static RBcLearningMap getInstance() {
 		return instance;
-	}
-	
-	/**
-	 * Given a placement, return all attributes associated with it
-	 * @param key
-	 * @return
-	 */
-	public Set<BullseyeAttribute> getAttributesForPlacement(RBcLearningMapKey key) {
-		if( key != null && learningMap.containsKey(key) ){
-			return learningMap.get(key);
-		} 
-		return null;
 	}
 	
 	/**
@@ -62,20 +50,7 @@ public class RBcLearningMap {
 		}
 		return attributes;
 	}
-	/**
-	 * Learn one attribute for all associated placements.
-	 * @param keys
-	 * @param attribute
-	 */
-	public void addAttribute(Set<RBcLearningMapKey> keys, BullseyeAttribute attribute) {
-		if(keys == null || attribute == null) return; 
-		for( RBcLearningMapKey key : keys ) {
-			if( key != null ){
-				learningMap.putIfAbsent(key, Collections.synchronizedSet( new HashSet<BullseyeAttribute>()  ));
-				learningMap.get(key).add(attribute);
-			}
-		}
-	}
+
 	/**
 	 * Learn a set of attributes for all associated placements.
 	 * @param keys
@@ -91,8 +66,19 @@ public class RBcLearningMap {
 		}
 	}
 	
-	public synchronized void update() {
-		
+	/**
+	 * Remove a set of given attributes given a set of given keys.
+	 * @param keys
+	 * @param attributes
+	 */
+	public void removeAttributes(Set<RBcLearningMapKey> keys, Set<BullseyeAttribute> attributes) {
+		if(keys == null || attributes == null) return;
+		for(RBcLearningMapKey key : keys)
+			if(key != null)
+				for(BullseyeAttribute attribute : attributes) {
+					if(attribute != null)
+						learningMap.get(key).remove(attribute);
+				}
 	}
 	
 	/**
@@ -102,14 +88,19 @@ public class RBcLearningMap {
 	public synchronized void clear() {
 		learningMap.clear();
 	}
-	
-	//For debug
-	public void printMap() {
+
+	public String toString() {
+		StringBuffer buffer = new StringBuffer();
 		for(RBcLearningMapKey key : learningMap.keySet()) {
-			StringBuffer buffer = new StringBuffer();
 			buffer.append("Placement: " + key);
 			buffer.append(" Attributes: " + learningMap.get(key));
-			System.out.println(buffer.toString());
-		}
+			buffer.append(System.lineSeparator());
+		}		
+		return buffer.toString();
+	}
+	
+	//For debugging
+	public void printMap() {
+		System.out.println(toString());
 	}
 }
